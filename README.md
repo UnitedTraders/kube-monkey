@@ -82,6 +82,14 @@ spec:
 [... omitted ...]
 ```
 
+To change the existing deployments you can use the commands:
+
+```
+kubectl label deployment my-app-to-kill kube-monkey/enabled=enabled
+kubectl label deployment my-app-to-kill kube-monkey/identifier=my-app-to-kill
+...
+```
+
 ### Overriding the apiserver
 #### Use cases:
 * Since client-go does not support [cluster dns](https://github.com/kubernetes/client-go/blob/master/rest/config.go#L331) explicitly with a `// TODO: switch to using cluster DNS.` note in the code, you may need to override the apiserver.

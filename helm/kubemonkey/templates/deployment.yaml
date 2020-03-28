@@ -25,14 +25,14 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-             - "/kube-monkey"
+             - "/go/bin/kube-monkey"
           args: ["-v={{ .Values.args.logLevel }}", "-log_dir={{ .Values.args.logDir }}"]
           resources:
 {{- toYaml .Values.resources | trimSuffix "\n" | nindent 12 }}
           volumeMounts:
              - name: config-volume
                mountPath: "/etc/kube-monkey"
-      serviceAccountName: {{ template "kubemonkey.fullname" . }} 
+      serviceAccountName: {{ template "kubemonkey.fullname" . }}
       volumes:
         - name: config-volume
           configMap:
