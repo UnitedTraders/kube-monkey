@@ -20,6 +20,8 @@ spec:
         app: {{ template "kubemonkey.name" . }}
         release: {{ .Release.Name }}
     spec:
+      imagePullSecrets: [{name: registry}]
+      restartPolicy: Always
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

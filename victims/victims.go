@@ -242,7 +242,7 @@ func labelFilterForPods(identifier string) (*metav1.ListOptions, error) {
 
 // Create a labels.Requirement that can be used to build a filter
 func labelRequirementForPods(identifier string) (*labels.Requirement, error) {
-	return labels.NewRequirement(config.IdentLabelKey, selection.Equals, sets.NewString(identifier).UnsortedList())
+	return labels.NewRequirement("app", selection.Equals, sets.NewString(identifier).UnsortedList())
 }
 
 // RandomPodName picks a random pod name from a list of Pods

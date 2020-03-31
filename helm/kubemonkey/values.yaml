@@ -10,7 +10,8 @@ image:
   tag: v0.3.0
   pullPolicy: IfNotPresent
 config:
-  dryRun: true  
+  dryRun: true
+  clusterAddress: "localhost:6443"
   runHour: 8
   startHour: 10
   endHour: 16
