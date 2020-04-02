@@ -5,6 +5,7 @@ package statefulsets
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 
@@ -87,4 +88,20 @@ func (ss *StatefulSet) KillValue(clientset kube.Interface) (int, error) {
 	}
 
 	return killModeInt, nil
+}
+
+
+// DisruptHostsValue returns the list of host to be disrupted defined by the config label
+func (ss *StatefulSet) DisruptHostsValue(clientset kube.Interface)  ([]string, error) {
+	statefulset, err := clientset.AppsV1().StatefulSets(ss.Namespace()).Get(ss.Name(), metav1.GetOptions{})
+	if err != nil {
+		return []string{}, err
+	}
+
+	hosts, ok := statefulset.Labels[config.DisruptHostsLabelKey]
+	if !ok {
+		return []string{}, fmt.Errorf("%s %s does not have %s label", ss.Kind(), ss.Name(), config.KillTypeLabelKey)
+	}
+
+	return strings.Split(hosts, ","), nil
 }

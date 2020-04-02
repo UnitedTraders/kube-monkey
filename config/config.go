@@ -29,10 +29,12 @@ const (
 	MtbfLabelKey                  = "kube-monkey/mtbf"
 	KillTypeLabelKey              = "kube-monkey/kill-mode"
 	KillValueLabelKey             = "kube-monkey/kill-value"
+	DisruptHostsLabelKey          = "kube-monkey/disrupt-hosts"
 	KillRandomMaxLabelValue       = "random-max-percent"
 	KillFixedPercentageLabelValue = "fixed-percent"
 	KillFixedLabelValue           = "fixed"
 	KillAllLabelValue             = "kill-all"
+	KillDisruptNetwork            = "disrupt-network"
 )
 
 func SetDefaults() {

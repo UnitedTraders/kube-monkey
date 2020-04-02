@@ -5,6 +5,7 @@ package deployments
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 
@@ -87,4 +88,19 @@ func (d *Deployment) KillValue(clientset kube.Interface) (int, error) {
 	}
 
 	return killModeInt, nil
+}
+
+// DisruptHostsValue returns the list of host to be disrupted defined by the config label
+func (d *Deployment) DisruptHostsValue(clientset kube.Interface)  ([]string, error) {
+	deployment, err := clientset.AppsV1().Deployments(d.Namespace()).Get(d.Name(), metav1.GetOptions{})
+	if err != nil {
+		return []string{}, err
+	}
+
+	hosts, ok := deployment.Labels[config.DisruptHostsLabelKey]
+	if !ok {
+		return []string{}, fmt.Errorf("%s %s does not have %s label", d.Kind(), d.Name(), config.KillTypeLabelKey)
+	}
+
+	return strings.Split(hosts, ","), nil
 }

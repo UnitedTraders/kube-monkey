@@ -36,6 +36,13 @@ func (vm *victimMock) KillValue(clientset kube.Interface) (int, error) {
 	return args.Int(0), args.Error(1)
 }
 
+
+func (vm *victimMock) DisruptHostsValue(clientset kube.Interface) ([]string, error) {
+	args := vm.Called(clientset)
+	return []string{}, args.Error(1)
+}
+
+
 func (vm *victimMock) DeleteRandomPod(clientset kube.Interface) error {
 	args := vm.Called(clientset)
 	return args.Error(0)
@@ -43,6 +50,11 @@ func (vm *victimMock) DeleteRandomPod(clientset kube.Interface) error {
 
 func (vm *victimMock) DeleteRandomPods(clientset kube.Interface, killValue int) error {
 	args := vm.Called(clientset, killValue)
+	return args.Error(0)
+}
+
+func (vm *victimMock) DisruptNetwork(clientset kube.Interface, killValue int, hosts []string) error {
+	args := vm.Called(clientset, killValue, hosts)
 	return args.Error(0)
 }
 

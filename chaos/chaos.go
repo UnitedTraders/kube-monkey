@@ -134,6 +134,16 @@ func (c *Chaos) terminate(clientset kube.Interface) error {
 			return err
 		}
 		return c.Victim().DeleteRandomPods(clientset, killNum)
+	case config.KillDisruptNetwork:
+		killNum, err := c.Victim().KillNumberForKillingAll(clientset)
+		if err != nil {
+			return err
+		}
+		hosts, err := c.getDisruptHosts(clientset)
+		if err != nil {
+			return err
+		}
+		return c.Victim().DisruptNetwork(clientset, killNum, hosts)
 	default:
 		return fmt.Errorf("failed to recognize KillType label for %s %s", c.Victim().Kind(), c.Victim().Name())
 	}
@@ -146,6 +156,16 @@ func (c *Chaos) getKillValue(clientset kube.Interface) (int, error) {
 	}
 
 	return killValue, nil
+}
+
+
+func (c *Chaos) getDisruptHosts(clientset kube.Interface) ([]string, error) {
+	hosts, err := c.Victim().DisruptHostsValue(clientset)
+	if err != nil {
+		return []string{}, errors.Wrapf(err, "Failed to check DisruptHosts label for %s %s", c.Victim().Kind(), c.Victim().Name())
+	}
+
+	return hosts, nil
 }
 
 // Redundant for DeleteRandomPods(clientset,1) but DeleteRandomPod is faster

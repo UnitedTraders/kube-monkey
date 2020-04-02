@@ -38,9 +38,10 @@ type VictimBaseTemplate interface {
 
 type VictimSpecificAPICalls interface {
 	// Depends on which version i.e. apps/v1 or extensions/v1beta2
-	IsEnrolled(kube.Interface) (bool, error) // Get updated enroll status
-	KillType(kube.Interface) (string, error) // Get updated kill config type
-	KillValue(kube.Interface) (int, error)   // Get updated kill config value
+	IsEnrolled(kube.Interface) (bool, error)            // Get updated enroll status
+	KillType(kube.Interface) (string, error)            // Get updated kill config type
+	KillValue(kube.Interface) (int, error)              // Get updated kill config value
+	DisruptHostsValue(kube.Interface) ([]string, error) // Get updated hosts to disconnect from
 }
 
 type VictimAPICalls interface {
@@ -50,6 +51,7 @@ type VictimAPICalls interface {
 	DeletePod(kube.Interface, string) error
 	DeleteRandomPod(kube.Interface) error // Deprecated, but faster than DeleteRandomPods for single pod termination
 	DeleteRandomPods(kube.Interface, int) error
+	DisruptNetwork(kube.Interface, int, []string) error
 	IsBlacklisted() bool
 	IsWhitelisted() bool
 }

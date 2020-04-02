@@ -30,12 +30,15 @@ that belong to a k8s app as Pods inherit labels from their k8s app. So, if kube-
 * `fixed` if you want to kill a specific number of running pods with kill-value. If you overspecify, it will kill all running pods and issue a warning.
 * `random-max-percent` to specify a maximum % with kill-value that can be killed. At the scheduled time, a uniform random specified % of the running pods will be terminated.
 * `fixed-percent` to specify a fixed % with kill-value that can be killed. At the scheduled time, a specified fixed % of the running pods will be terminated.
+* `disrupt-network` if you want kube-monkey to disrupt network connection for all of your running pods. Requires disrupt-hosts.
 
 
 **`kube-monkey/kill-value`**: Specify value for kill-mode
 * if `fixed`, provide an integer of pods to kill
 * if `random-max-percent`, provide a number from 0-100 to specify the max % of pods kube-monkey can kill
 * if `fixed-percent`, provide a number from 0-100 to specify the % of pods to kill
+
+**`kube-monkey/disrupt-hosts`**: Specify comma-separated list of hosts to disrupt connection with (only valid for _kill-mode=disrupt-network_).
 
 #### Example of opted-in Deployment killing one pod per purge
 

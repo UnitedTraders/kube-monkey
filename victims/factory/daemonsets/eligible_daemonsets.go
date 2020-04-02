@@ -5,6 +5,7 @@ package daemonsets
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 
@@ -91,4 +92,19 @@ func (d *DaemonSet) KillValue(clientset kube.Interface) (int, error) {
 	}
 
 	return killModeInt, nil
+}
+
+// DisruptHostsValue returns the list of host to be disrupted defined by the config label
+func (d *DaemonSet) DisruptHostsValue(clientset kube.Interface)  ([]string, error) {
+	daemonset, err := clientset.AppsV1().DaemonSets(d.Namespace()).Get(d.Name(), metav1.GetOptions{})
+	if err != nil {
+		return []string{}, err
+	}
+
+	hosts, ok := daemonset.Labels[config.DisruptHostsLabelKey]
+	if !ok {
+		return []string{}, fmt.Errorf("%s %s does not have %s label", d.Kind(), d.Name(), config.KillTypeLabelKey)
+	}
+
+	return strings.Split(hosts, ","), nil
 }
