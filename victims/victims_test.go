@@ -77,6 +77,10 @@ func TestVictimBaseTemplateGetters(t *testing.T) {
 	assert.Equal(t, 1, v.Mtbf())
 }
 
+// TODO: fix tests
+//  TestRunningPods, TestPods TestDeleteRandomPods,
+//  TestDeletePodsFixedPercentage, TestDeleteRandomPod
+
 func TestRunningPods(t *testing.T) {
 
 	v := newVictimBase()

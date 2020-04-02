@@ -1,9 +1,14 @@
 package victims
 
 import (
+	"bytes"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 	"math"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/asobti/kube-monkey/config"
@@ -209,6 +214,144 @@ func (v *VictimBase) DeleteRandomPod(clientset kube.Interface) error {
 
 	glog.V(6).Infof("Terminating pod %s for %s %s\n", targetPod, v.kind, v.name)
 	return v.DeletePod(clientset, targetPod)
+}
+
+// DisconnectPod disconnects specified pod for victim
+func (v *VictimBase) DisconnectPod(clientset kube.Interface, podName string, hosts []string) error {
+	if config.DryRun() {
+		glog.Infof("[DryRun Mode] Terminated network for pod %s for %s/%s", podName, v.namespace, v.name)
+		return nil
+	}
+
+	glog.V(6).Infof("Disconnecting pod %s for %s/%s: hosts %s", podName, v.namespace, v.name, hosts)
+
+	// TODO
+	// **backup /etc/hosts**
+	//
+	// echo "127.0.0.1 s3.amazonaws.com" >> /etc/hosts
+	// echo "127.0.0.1 s3-external-1.amazonaws.com" >> /etc/hosts
+	//
+	// SshClient ssh = instance.connectSsh();
+	// ssh.put("/tmp/" + filename, script);
+	// ssh.exec("/bin/bash /tmp/" + filename);
+	// ssh.disconnect();
+	//
+	// **restore /etc/hosts by timeout**
+	// The timeout (in seconds) can be read from the `kube-monkey/kill-value` label's value
+
+	output, err := ExecToPodThroughAPI(clientset, "cat /etc/hosts", v.name, podName, v.namespace)
+	if err == nil {
+		glog.V(4).Infof("Command output for pod %s: %s", podName, output)
+	} else {
+		glog.Warning("Failed to execute command for pod %s: %s", podName, err)
+	}
+
+	return nil
+}
+
+func ExecToPodThroughAPI(clientset kube.Interface, command, containerName, podName, namespace string) (string, error) {
+	req := clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(namespace).
+		SubResource("exec")
+	scheme := runtime.NewScheme()
+	if err := v1.AddToScheme(scheme); err != nil {
+		return "", fmt.Errorf("error adding to scheme: %v", err)
+	}
+
+	parameterCodec := runtime.NewParameterCodec(scheme)
+	req.VersionedParams(&v1.PodExecOptions{
+		Command:   strings.Fields(command),
+		Container: containerName,
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, parameterCodec)
+
+	glog.V(6).Infof("Request URL:", req.URL().String())
+
+	restConfig, err := rest.InClusterConfig()
+	if err != nil {
+		glog.Errorf("failed to obtain config from InClusterConfig: %v", err)
+		return "", err
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(restConfig, "POST", req.URL())
+	if err != nil {
+		return "", fmt.Errorf("error while creating Executor: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Tty:    false,
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("error in Stream: %v", err)
+	}
+
+	errMsg := stderr.String()
+	if errMsg != "" {
+		return "", fmt.Errorf("error while executing command: %v", errMsg)
+	}
+
+	return stdout.String(), nil
+}
+
+//// TODO
+//// Creates the DeleteOptions object
+//// Grace period is derived from config
+//func (v *VictimBase) GetDisconnectOptsForPod() *metav1.DeleteOptions {
+//	gracePeriodSec := config.GracePeriodSeconds()
+//
+//	return &metav1.DeleteOptions{
+//		GracePeriodSeconds: gracePeriodSec,
+//	}
+//}
+
+// DisruptNetwork disconnects the victim from the network
+func (v *VictimBase) DisruptNetwork(clientset kube.Interface, killNum int, hosts []string) error {
+	// Pick a target pod to delete
+	pods, err := v.RunningPods(clientset)
+	if err != nil {
+		return err
+	}
+
+	numPods := len(pods)
+	switch {
+	case numPods == 0:
+		return fmt.Errorf("%s %s has no running pods at the moment", v.kind, v.name)
+	case killNum == 0:
+		return fmt.Errorf("no terminations requested for %s %s", v.kind, v.name)
+	case numPods < killNum:
+		glog.Warningf("%s %s has only %d currently running pods, but %d terminations requested", v.kind, v.name, numPods, killNum)
+		fallthrough
+	case numPods == killNum:
+		glog.V(6).Infof("Killing ALL %d running pods for %s %s", numPods, v.kind, v.name)
+	case killNum < 0:
+		return fmt.Errorf("cannot request negative terminations %d for %s %s", killNum, v.kind, v.name)
+	case numPods > killNum:
+		glog.V(6).Infof("Killing %d running pods for %s %s", killNum, v.kind, v.name)
+	default:
+		return fmt.Errorf("unexpected behavior for terminating %s %s", v.kind, v.name)
+	}
+
+	for victimIndex := 0; victimIndex < killNum; victimIndex++ {
+		targetPod := pods[victimIndex].Name
+
+		glog.V(6).Infof("Terminating network for pod %s for %s %s/%s\n", targetPod, v.kind, v.namespace, v.name)
+
+		err = v.DisconnectPod(clientset, targetPod, hosts)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // IsBlacklisted checks if this victim is blacklisted

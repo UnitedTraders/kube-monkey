@@ -7,6 +7,8 @@ RUN curl https://glide.sh/get | sh
 COPY . /go/src/github.com/asobti/kube-monkey
 WORKDIR /go/src/github.com/asobti/kube-monkey
 RUN glide install
+RUN glide get k8s.io/apimachinery/pkg/runtime
+RUN glide get k8s.io/client-go/tools/remotecommand
 RUN make build
 
 ########################
